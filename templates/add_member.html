@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add New Member</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #ff9966, #ff5e62);
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 30px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+            width: 50%;
+            margin: auto;
+            text-align: left;
+            color: black;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #222;
+            color: white;
+            padding: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            border-radius: 5px;
+            transition: 0.3s ease-in-out;
+        }
+
+        button:hover {
+            background-color: #ff9966;
+            transform: scale(1.05);
+        }
+
+        a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: inline-block;
+            margin-top: 15px;
+        }
+
+        a:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* Centers the element */
+    
+    background-color: rgba(0, 255, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    display: none;
+    font-weight: bold;
+    text-align: center;
+}
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <br><br><br>
+
+    <h1>Add New Member</h1>
+    <br><br>
+
+    <form id="memberForm" action="/add-member" method="POST">
+        <label>Name:</label>
+        <input type="text" name="name" required><br><br>
+
+        <label>Status:</label>
+        <select name="status">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+        </select><br><br>
+
+        <label>Expiry Date:</label>
+        <input type="date" name="expiry_date" required><br><br>
+
+        <label>Trainer ID:</label>
+        <input type="text" name="trainer_id" required><br><br>
+
+        <button type="submit">Add Member</button>
+    </form>
+
+    <br>
+    <a href="/">Back to Home page</a>
+
+    <!-- Notification Bubble -->
+    <div id="notification" class="notification">
+        Your Data has been Added Successfully
+    </div>
+    <footer>
+        You can test giving 1-2 input. 
+        This was deployed only for Development Purpose.
+    </footer>
+
+   <script>
+    document.getElementById("memberForm").addEventListener("submit", function(event) {
+        event.preventDefault();  // Prevent the default form submission
+
+        let formData = new FormData(this);
+
+        fetch("/add-member", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.text())  // Process response
+        .then(data => {
+            // Show notification
+            let notification = document.getElementById("notification");
+            notification.style.display = "block";
+
+            // Hide notification after 3 seconds
+            setTimeout(() => {
+                notification.style.display = "none";
+            }, 5000);
+
+            // Clear form inputs after submission
+            document.getElementById("memberForm").reset();
+        })
+        .catch(error => console.error("Error:", error));
+    });
+</script>
+
+
+</body>
+</html>
