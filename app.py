@@ -1,22 +1,24 @@
+
 from flask import Flask, render_template, request, redirect
-import mysql.connector
+import psycopg2
+import os
 from datetime import datetime
+
 
 app = Flask(__name__)
 
-# Database Connection Function
 def get_db_connection():
     try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="minto750",  # Change this to your actual MySQL password
-            database="gym",
-            auth_plugin="mysql_native_password"
+        return psycopg2.connect(
+            dbname=os.environ.get("DB_NAME"),
+            user=os.environ.get("DB_USER"),
+            password=os.environ.get("DB_PASSWORD"),
+            host=os.environ.get("DB_HOST"),
+            port=os.environ.get("DB_PORT", 5432)
         )
-    except mysql.connector.Error as err:
+    except psycopg2.Error as err:
         print(f"Database connection error: {err}")
-        return None  # Handle failure gracefully
+        return None
     
 
 @app.route("/")
@@ -31,25 +33,25 @@ def active_members():
         return "Database connection failed", 500
 
     cursor = db.cursor()
-    cursor.execute("""
+    cursor.execute('''
         SELECT m.member_id, m.name, COALESCE(COUNT(a.session_id), 0) AS session_count
-        FROM Members m
-        LEFT JOIN Attendance a ON m.member_id = a.member_id
+        FROM "Members" m
+        LEFT JOIN "Attendance" a ON m.member_id = a.member_id
         WHERE m.status = 'Active'
         GROUP BY m.member_id, m.name
         ORDER BY session_count DESC
-    """)
+    ''')
     active_members = cursor.fetchall()
 
-    cursor.execute("""
+    cursor.execute('''
         SELECT m.member_id, m.name, COALESCE(COUNT(a.session_id), 0) AS session_count, m.expiry_date
-        FROM Members m
-        LEFT JOIN Attendance a ON m.member_id = a.member_id
+        FROM "Members" m
+        LEFT JOIN "Attendance" a ON m.member_id = a.member_id
         WHERE m.status = 'Active'
         GROUP BY m.member_id, m.name, m.expiry_date
         ORDER BY session_count DESC
         LIMIT 1
-    """)
+    ''')
     most_active_member = cursor.fetchone()
 
     cursor.close()
@@ -64,7 +66,7 @@ def expiring_members():
 
     cursor = db.cursor()
     current_month = datetime.now().strftime("%Y-%m")
-    cursor.execute("SELECT * FROM Members WHERE expiry_date LIKE %s", (current_month + "%",))
+    cursor.execute("SELECT * FROM \"Members\" WHERE expiry_date::text LIKE %s", (current_month + "%",))
     expiring_members = cursor.fetchall()
 
     cursor.close()
@@ -78,12 +80,12 @@ def trainer_member_count():
         return "Database connection failed", 500
 
     cursor = db.cursor()
-    cursor.execute("""
+    cursor.execute('''
         SELECT m.trainer_id, t.name, COUNT(*) AS member_count
-        FROM Members m
-        JOIN Trainers t ON m.trainer_id = t.trainer_id
+        FROM "Members" m
+        JOIN "Trainers" t ON m.trainer_id = t.trainer_id
         GROUP BY m.trainer_id, t.name
-    """)
+    ''')
 
     trainer_counts = cursor.fetchall()
 
@@ -98,7 +100,7 @@ def all_members():
         return "Database connection failed", 500
 
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM Members")
+    cursor.execute('SELECT * FROM "Members"')
     all_members = cursor.fetchall()
 
     cursor.close()
@@ -118,12 +120,12 @@ def add_member():
         expiry_date = request.form["expiry_date"]
         trainer_id = request.form["trainer_id"]
 
-        cursor.execute("SELECT MAX(member_id) FROM Members")
+        cursor.execute('SELECT MAX(member_id) FROM "Members"')
         last_id = cursor.fetchone()[0]
 
         new_member_id = 1 if last_id is None else last_id + 1
 
-        query = "INSERT INTO Members (member_id, name, status, expiry_date, trainer_id) VALUES (%s, %s, %s, %s, %s)"
+        query = 'INSERT INTO "Members" (member_id, name, status, expiry_date, trainer_id) VALUES (%s, %s, %s, %s, %s)'
         cursor.execute(query, (new_member_id, name, status, expiry_date, trainer_id))
         db.commit()
 
